@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "X Video Downloader (트위터 동영상 다운로더)",
-  "version": "1.0.0",
-  "description": "x.com(트위터)의 고화질 동영상 및 GIF를 간편하고 안전하게 다운로드합니다. (악성코드 없는 100% 로컬 오픈소스)",
+  "name": "X & 810video 동영상 다운로더",
+  "version": "1.1.0",
+  "description": "x.com(트위터) 및 810video.com(PeerTube)의 고화질 동영상 및 GIF를 간편하고 안전하게 다운로드합니다. (악성코드 없는 100% 로컬 오픈소스)",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
@@ -15,7 +15,7 @@
       "48": "icons/icon-48.png",
       "128": "icons/icon-128.png"
     },
-    "default_title": "X 동영상 다운로더"
+    "default_title": "X & 810video 동영상 다운로더"
   },
   "permissions": [
     "downloads",
@@ -25,7 +25,9 @@
   "host_permissions": [
     "https://x.com/*",
     "https://twitter.com/*",
-    "https://*.twimg.com/*"
+    "https://*.twimg.com/*",
+    "https://810video.com/*",
+    "https://*.810video.com/*"
   ],
   "background": {
     "service_worker": "scripts/background.js"
@@ -45,7 +47,8 @@
     {
       "matches": [
         "https://x.com/*",
-        "https://twitter.com/*"
+        "https://twitter.com/*",
+        "https://810video.com/*"
       ],
       "js": [
         "scripts/content.js"
@@ -64,7 +67,8 @@
       ],
       "matches": [
         "https://x.com/*",
-        "https://twitter.com/*"
+        "https://twitter.com/*",
+        "https://810video.com/*"
       ]
     }
   ]

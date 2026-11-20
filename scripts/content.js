@@ -50,17 +50,23 @@
     return name.replace(/[/\\?%*:|"<>]/g, '_').replace(/\s+/g, '_').substring(0, 100);
   }
 
-  // Generate nice filename: e.g. x_elonmusk_123456789_1080p.mp4
+  // Generate nice filename: e.g. x_elonmusk_123456789_1080p.mp4 or Title_720p.mp4
   function buildFilename(tweetData, variant) {
-    const username = tweetData?.username || 'user';
-    const tweetId = tweetData?.tweetId || Date.now();
+    let baseName = '';
+    if (tweetData?.name && !window.location.hostname.includes('twitter') && !window.location.hostname.includes('x.com')) {
+      baseName = tweetData.name;
+    } else {
+      const username = tweetData?.username || 'user';
+      const tweetId = tweetData?.tweetId || Date.now();
+      baseName = `x_${username}_${tweetId}`;
+    }
     let quality = 'video';
     if (variant?.resolution) {
       quality = variant.resolution.replace(/\s+/g, '');
     } else if (variant?.bitrate) {
       quality = `${Math.round(variant.bitrate / 1000)}k`;
     }
-    return sanitizeFilename(`x_${username}_${tweetId}_${quality}.mp4`);
+    return sanitizeFilename(`${baseName}_${quality}.mp4`);
   }
 
   // Trigger Download via Chrome Background Service Worker
@@ -513,24 +519,154 @@
     }
   });
 
-  // Observe DOM changes with throttled MutationObserver
-  let mutationTimeout = null;
-  const observer = new MutationObserver(() => {
-    if (mutationTimeout) return;
-    mutationTimeout = setTimeout(() => {
-      mutationTimeout = null;
-      scanPage();
-    }, 200);
-  });
+  // --- 810video.com (PeerTube) Integration ---
+  function init810Video() {
+    let currentVideoId = null;
+    let currentVideoData = null;
 
-  observer.observe(document.body || document.documentElement, {
-    childList: true,
-    subtree: true
-  });
+    async function checkPeerTubePage() {
+      const match = window.location.pathname.match(/\/(?:videos\/watch|w)\/([a-zA-Z0-9-]+)/);
+      if (!match) return;
 
-  // Initial scan
-  scanPage();
+      const videoId = match[1];
+      if (videoId === currentVideoId && currentVideoData) {
+        inject810Buttons();
+        return;
+      }
 
-  // Re-scan when history/URL changes (SPA navigation)
-  window.addEventListener('popstate', () => setTimeout(scanPage, 500));
+      currentVideoId = videoId;
+      try {
+        const res = await fetch(`https://810video.com/api/v1/videos/${videoId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const variants = [];
+        // Extract from streamingPlaylists (HLS fragmented MP4s)
+        if (Array.isArray(data.streamingPlaylists)) {
+          for (const sp of data.streamingPlaylists) {
+            for (const f of (sp.files || [])) {
+              const resLabel = f.resolution?.label || (f.resolution?.id ? `${f.resolution.id}p` : 'MP4');
+              const url = f.fileDownloadUrl || f.fileUrl;
+              if (url) {
+                variants.push({
+                  label: `${resLabel} (고화질 MP4)`,
+                  resolution: resLabel,
+                  url: url,
+                  bitrate: f.fps || 0
+                });
+              }
+            }
+          }
+        }
+        // Extract from direct files
+        if (Array.isArray(data.files)) {
+          for (const f of data.files) {
+            const resLabel = f.resolution?.label || (f.resolution?.id ? `${f.resolution.id}p` : 'MP4');
+            const url = f.fileDownloadUrl || f.fileUrl;
+            if (url) {
+              variants.push({
+                label: `${resLabel} (MP4)`,
+                resolution: resLabel,
+                url: url,
+                bitrate: f.size || 0
+              });
+            }
+          }
+        }
+
+        // Sort descending by resolution (1080p > 720p > 480p > 360p)
+        variants.sort((a, b) => {
+          const getNum = str => parseInt((str.resolution || '').replace(/\D/g, ''), 10) || 0;
+          return getNum(b) - getNum(a);
+        });
+
+        const videoItem = {
+          tweetId: String(data.id || videoId),
+          username: data.channel?.displayName || data.account?.displayName || '810video',
+          name: data.name || '810video',
+          text: data.description || '',
+          poster: data.thumbnailUrl || data.previewUrl || '',
+          variants: variants,
+          durationMs: (data.duration || 0) * 1000
+        };
+
+        currentVideoData = videoItem;
+        tweetMediaMap.set(videoItem.tweetId, videoItem);
+        syncMediaWithBackground();
+        inject810Buttons();
+      } catch (err) {
+        // Silently continue
+      }
+    }
+
+    function inject810Buttons() {
+      if (!currentVideoData || currentVideoData.variants.length === 0) return;
+
+      // 1. Video Player Hover Overlay Pill
+      const videoEl = document.querySelector('video');
+      const playerContainer = videoEl?.closest('.video-js') || videoEl?.closest('my-video-player') || videoEl?.parentElement;
+      if (playerContainer && !playerContainer.querySelector('.x-downloader-video-pill')) {
+        const pill = document.createElement('div');
+        pill.className = 'x-downloader-video-pill';
+        pill.style.opacity = '1';
+        pill.style.pointerEvents = 'auto';
+        pill.innerHTML = `${ICONS.download} <span>다운로드</span>`;
+        pill.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          showQualityMenu(pill, currentVideoData);
+        });
+        playerContainer.style.position = 'relative';
+        playerContainer.appendChild(pill);
+      }
+
+      // 2. Action Button under Video Details
+      const actionsBar = document.querySelector('.actions-button') ||
+                         document.querySelector('.actions-container') ||
+                         document.querySelector('my-video-actions') ||
+                         document.querySelector('.video-actions');
+
+      if (actionsBar && !actionsBar.querySelector('.x-downloader-810-btn')) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'x-downloader-810-btn';
+        btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;background:#1d9bf0;color:#fff;border:none;font-weight:600;font-size:13px;cursor:pointer;margin-left:8px;';
+        btn.innerHTML = `${ICONS.download} <span>동영상 다운로드</span>`;
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          showQualityMenu(btn, currentVideoData);
+        });
+        actionsBar.appendChild(btn);
+      }
+    }
+
+    // Check periodically for SPA navigation in PeerTube
+    setInterval(checkPeerTubePage, 1200);
+    window.addEventListener('popstate', checkPeerTubePage);
+    checkPeerTubePage();
+  }
+
+  // Choose initialization based on host
+  if (window.location.hostname.includes('810video.com')) {
+    init810Video();
+  } else {
+    // Standard Twitter / X Observer
+    let mutationTimeout = null;
+    const observer = new MutationObserver(() => {
+      if (mutationTimeout) return;
+      mutationTimeout = setTimeout(() => {
+        mutationTimeout = null;
+        scanPage();
+      }, 200);
+    });
+
+    observer.observe(document.body || document.documentElement, {
+      childList: true,
+      subtree: true
+    });
+
+    scanPage();
+    window.addEventListener('popstate', () => setTimeout(scanPage, 500));
+  }
 })();

@@ -74,9 +74,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Get active browser tab
   const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-  // Pre-fill URL tab if active tab is a tweet
-  if (activeTab?.url && (activeTab.url.includes('x.com') || activeTab.url.includes('twitter.com'))) {
-    if (activeTab.url.includes('/status/')) {
+  // Pre-fill URL tab if active tab is a tweet or 810video
+  if (activeTab?.url) {
+    if ((activeTab.url.includes('x.com') || activeTab.url.includes('twitter.com')) && activeTab.url.includes('/status/')) {
+      inputTweetUrl.value = activeTab.url;
+    } else if (activeTab.url.includes('810video.com') && (activeTab.url.includes('/watch') || activeTab.url.includes('/w/'))) {
       inputTweetUrl.value = activeTab.url;
     }
   }
@@ -238,17 +240,75 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Load URL Input tab parser
+  // Load URL Input tab parser (Supports X.com and 810video.com)
   btnFetchUrl.addEventListener('click', async () => {
     const rawUrl = inputTweetUrl.value.trim();
     if (!rawUrl) {
-      showToast('트윗 링크를 입력해주세요');
+      showToast('동영상 링크를 입력해주세요');
       return;
     }
 
+    // --- 1. Check for 810video.com URL ---
+    const match810 = rawUrl.match(/810video\.com\/(?:videos\/watch|w)\/([a-zA-Z0-9-]+)/);
+    if (match810) {
+      const videoId = match810[1];
+      btnFetchUrl.disabled = true;
+      btnFetchUrl.textContent = '분석 중...';
+      urlResultContainer.classList.remove('hidden');
+      urlResultContainer.innerHTML = `<div style="text-align:center;padding:16px;color:var(--text-secondary);">810video 동영상 정보를 추출하고 있습니다...</div>`;
+
+      try {
+        const res = await fetch(`https://810video.com/api/v1/videos/${videoId}`);
+        if (!res.ok) throw new Error('Failed to fetch 810video');
+        const data = await res.json();
+
+        const variants = [];
+        if (Array.isArray(data.streamingPlaylists)) {
+          for (const sp of data.streamingPlaylists) {
+            for (const f of (sp.files || [])) {
+              const resLabel = f.resolution?.label || (f.resolution?.id ? `${f.resolution.id}p` : 'MP4');
+              const url = f.fileDownloadUrl || f.fileUrl;
+              if (url) variants.push({ label: `${resLabel} (고화질 MP4)`, resolution: resLabel, url });
+            }
+          }
+        }
+        if (Array.isArray(data.files)) {
+          for (const f of data.files) {
+            const resLabel = f.resolution?.label || (f.resolution?.id ? `${f.resolution.id}p` : 'MP4');
+            const url = f.fileDownloadUrl || f.fileUrl;
+            if (url) variants.push({ label: `${resLabel} (MP4)`, resolution: resLabel, url });
+          }
+        }
+
+        variants.sort((a, b) => {
+          const getNum = str => parseInt((str.resolution || '').replace(/\D/g, ''), 10) || 0;
+          return getNum(b) - getNum(a);
+        });
+
+        const videoItem = {
+          tweetId: String(data.id || videoId),
+          username: data.channel?.displayName || data.account?.displayName || '810video',
+          name: data.name || '810video',
+          text: data.description || '',
+          poster: data.thumbnailUrl || data.previewUrl || '',
+          variants: variants
+        };
+
+        urlResultContainer.innerHTML = '';
+        urlResultContainer.appendChild(createVideoCard(videoItem));
+      } catch (err) {
+        urlResultContainer.innerHTML = `<div style="color:#f4212e;text-align:center;padding:12px;">동영상 정보를 가져올 수 없습니다. 링크를 확인해주세요.</div>`;
+      } finally {
+        btnFetchUrl.disabled = false;
+        btnFetchUrl.textContent = '분석';
+      }
+      return;
+    }
+
+    // --- 2. Check for Twitter / X URL ---
     const match = rawUrl.match(/\/status\/(\d+)/);
     if (!match) {
-      showToast('올바른 트윗(X) URL 형식이 아닙니다');
+      showToast('올바른 트윗(X) 또는 810video 링크가 아닙니다');
       return;
     }
 
