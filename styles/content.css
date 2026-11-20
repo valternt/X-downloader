@@ -1,0 +1,249 @@
+/* X (Twitter) Video Downloader - Content Styles */
+
+/* Injected Action Bar Button */
+.x-downloader-btn-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  user-select: none;
+}
+
+.x-downloader-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34.75px;
+  height: 34.75px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: rgb(113, 118, 123);
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  padding: 0;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.x-downloader-btn:hover {
+  background-color: rgba(29, 155, 240, 0.12);
+  color: rgb(29, 155, 240);
+}
+
+.x-downloader-btn:active {
+  transform: scale(0.92);
+}
+
+.x-downloader-btn svg {
+  width: 18.75px;
+  height: 18.75px;
+  fill: currentColor;
+  pointer-events: none;
+}
+
+/* Success download state */
+.x-downloader-btn.downloaded {
+  color: rgb(0, 186, 124) !important; /* Twitter Green */
+}
+.x-downloader-btn.downloaded:hover {
+  background-color: rgba(0, 186, 124, 0.12) !important;
+}
+
+/* Loading spinner */
+.x-downloader-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(29, 155, 240, 0.3);
+  border-top-color: rgb(29, 155, 240);
+  border-radius: 50%;
+  animation: x-spin 0.7s linear infinite;
+}
+
+@keyframes x-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Quality Selection Dropdown Menu (Fixed Portal to document.body) */
+.x-downloader-menu {
+  position: fixed !important;
+  background-color: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 1px rgba(255, 255, 255, 0.3);
+  min-width: 210px;
+  max-width: 260px;
+  padding: 6px;
+  z-index: 2147483647 !important; /* Always render above Twitter sidebars and dialogs */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  animation: x-menu-pop 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+@keyframes x-menu-pop {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Light mode support */
+.x-downloader-menu.light-theme,
+@media (prefers-color-scheme: light) {
+  .x-downloader-menu {
+    background-color: #ffffff;
+    border-color: rgba(0, 0, 0, 0.14);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.x-downloader-menu-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgb(113, 118, 123);
+  padding: 6px 10px 4px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.x-downloader-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #e7e9ea;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.12s ease;
+  box-sizing: border-box;
+}
+
+.x-downloader-menu.light-theme .x-downloader-menu-item,
+@media (prefers-color-scheme: light) {
+  .x-downloader-menu-item {
+    color: #0f1419;
+  }
+}
+
+.x-downloader-menu-item:hover {
+  background-color: rgba(29, 155, 240, 0.15);
+  color: rgb(29, 155, 240);
+}
+
+.x-downloader-menu-item .res-tag {
+  font-weight: 600;
+}
+
+.x-downloader-menu-item .bitrate-tag {
+  font-size: 11px;
+  color: rgb(113, 118, 123);
+  margin-left: 8px;
+}
+
+.x-downloader-menu-divider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: 4px 6px;
+}
+
+.x-downloader-menu.light-theme .x-downloader-menu-divider,
+@media (prefers-color-scheme: light) {
+  .x-downloader-menu-divider {
+    background-color: rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* Floating Video Player Overlay Pill */
+.x-downloader-video-pill {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0;
+  pointer-events: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  user-select: none;
+}
+
+/* Show pill when user hovers video container */
+[data-testid="videoPlayer"]:hover .x-downloader-video-pill,
+[data-testid="videoComponent"]:hover .x-downloader-video-pill,
+.x-downloader-video-container:hover .x-downloader-video-pill {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.x-downloader-video-pill:hover {
+  background: #1d9bf0;
+  border-color: #1d9bf0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(29, 155, 240, 0.4);
+}
+
+.x-downloader-video-pill svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* Toast Notifications */
+.x-downloader-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background-color: #1d9bf0;
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 9999px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 9999999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.x-downloader-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.x-downloader-toast.success {
+  background-color: #00ba7c;
+}
+
+.x-downloader-toast.info {
+  background-color: #1d9bf0;
+}
+
+.x-downloader-toast.error {
+  background-color: #f4212e;
+}

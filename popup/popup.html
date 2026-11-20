@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X (Twitter) 동영상 다운로더</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="brand">
+        <div class="logo-wrap">
+          <svg viewBox="0 0 24 24" class="logo-icon"><path d="M12 2.5a.75.75 0 0 1 .75.75v11.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 1 1 1.06-1.06l3.22 3.22V3.25a.75.75 0 0 1 .75-.75zM4 16.75a.75.75 0 0 1 .75.75v2a1 1 0 0 0 1 1h12.5a1 1 0 0 0 1-1v-2a.75.75 0 0 1 1.5 0v2a2.5 2.5 0 0 1-2.5 2.5H5.75A2.5 2.5 0 0 1 3.25 19.5v-2a.75.75 0 0 1 .75-.75z"/></svg>
+        </div>
+        <div class="brand-text">
+          <h1 class="title">X Video Downloader</h1>
+          <span class="safe-badge">✓ 안전한 로컬 익스텐션</span>
+        </div>
+      </div>
+      <button id="btnSettings" class="icon-btn" title="설정">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      </button>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="tab-detected">
+        감지된 동영상 <span id="tabCountBadge" class="badge">0</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-url">URL 입력</button>
+      <button class="nav-tab" data-tab="tab-help">도움말</button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="content-body">
+      <!-- Tab 1: Detected Videos on active tab -->
+      <section id="tab-detected" class="tab-pane active">
+        <div id="videoListContainer" class="video-list">
+          <!-- Populated by JS -->
+        </div>
+
+        <div id="emptyState" class="empty-state">
+          <div class="empty-icon">🎬</div>
+          <h3 class="empty-title">감지된 동영상이 없습니다</h3>
+          <p class="empty-desc">
+            X.com 피드를 스크롤하거나 동영상이 포함된 트윗을 열어보세요.<br>
+            각 트윗 하단 액션바의 <strong>⬇ 버튼</strong>을 눌러 바로 다운로드할 수도 있습니다.
+          </p>
+          <button id="btnRefreshTab" class="btn btn-secondary">
+            🔄 현재 페이지 새로고침
+          </button>
+        </div>
+      </section>
+
+      <!-- Tab 2: URL Downloader -->
+      <section id="tab-url" class="tab-pane">
+        <div class="url-input-card">
+          <label for="inputTweetUrl" class="field-label">트윗(X) 링크 붙여넣기</label>
+          <div class="input-row">
+            <input type="text" id="inputTweetUrl" placeholder="https://x.com/username/status/..." class="text-input">
+            <button id="btnFetchUrl" class="btn btn-primary">분석</button>
+          </div>
+          <p class="field-hint">브라우저에 열려있는 트윗 또는 링크를 붙여넣으세요.</p>
+        </div>
+
+        <div id="urlResultContainer" class="url-result hidden">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- Tab 3: Help & Guide -->
+      <section id="tab-help" class="tab-pane">
+        <div class="help-card">
+          <h3>💡 사용 방법</h3>
+          <ol class="help-steps">
+            <li><strong>트윗 버튼으로 받기:</strong> 피드에서 동영상이 있는 트윗 하단 공유 버튼 옆 <strong>⬇ 다운로드 아이콘</strong>을 클릭합니다.</li>
+            <li><strong>동영상 위 오버레이:</strong> 마우스를 동영상 위에 올리면 나타나는 <strong>[다운로드]</strong> 알약 버튼을 클릭합니다.</li>
+            <li><strong>원하는 화질 선택:</strong> 1080p Full HD부터 360p까지 원하는 해상도를 클릭하면 즉시 저장됩니다.</li>
+          </ol>
+        </div>
+
+        <div class="help-card safe-notice">
+          <h3>🛡️ 안전한 익스텐션 보증</h3>
+          <p>
+            이 확장 프로그램은 <strong>100% 로컬 오픈소스 코드</strong>로 작동하며, 외부 광고 서버나 원격 추적 코드가 일절 포함되어 있지 않습니다. 트위터 공식 CDN(twimg.com)에서 원본 MP4를 직접 다운로드합니다.
+          </p>
+        </div>
+      </section>
+
+      <!-- Settings Pane (Overlay) -->
+      <section id="pane-settings" class="settings-pane hidden">
+        <div class="settings-header">
+          <h2>환경 설정</h2>
+          <button id="btnCloseSettings" class="icon-btn-close">✕</button>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-title" for="toggleAutoBest">최고 화질 자동 다운로드</label>
+            <span class="setting-desc">화질 선택창을 띄우지 않고 항상 최상위 해상도로 즉시 받습니다.</span>
+          </div>
+          <input type="checkbox" id="toggleAutoBest" class="toggle-switch">
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-title" for="selectFilename">저장 파일명 형식</label>
+            <span class="setting-desc">다운로드되는 비디오 파일 이름 스타일을 선택합니다.</span>
+          </div>
+          <select id="selectFilename" class="select-input">
+            <option value="user_id_quality">x_{아이디}_{트윗ID}_{화질}.mp4</option>
+            <option value="id_quality">x_{트윗ID}_{화질}.mp4</option>
+            <option value="user_id">x_{아이디}_{트윗ID}.mp4</option>
+          </select>
+        </div>
+
+        <div class="settings-footer">
+          <span class="version-tag">Version 1.0.0 • Clean Manifest V3</span>
+        </div>
+      </section>
+    </main>
+
+    <!-- Global In-Popup Toast -->
+    <div id="popupToast" class="popup-toast hidden"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
